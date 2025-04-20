@@ -18,7 +18,7 @@
 ![](media/the-life-of-light.png)
 <p align="center">图1 一条由点光源、着色点、眼睛构成的简单光路</p>
 
-考虑图1中的情况：对于点光源，我们无法定义它的出射radiance（因为没有面积），但是它的flux（记为 $\Phi$）均匀分布在半径为 $d$的球面上，球面面积为 $4\pi d^2$。因此，球面上单位面积的flux（理想情况的irradiance）为 $\frac{\Phi}{4\pi d^2}$。再引入入射角的影响，着色点 $\mathbf{p}$接收到的irradiance为 $\frac{\Phi}{4\pi d^2} \cdot (n \cdot \omega_i)$。表面的反射作用由BRDF（记为 $f_r(p,\omega_i,\omega_o)$）建模。最终出射radiance为 $$\frac{\Phi}{4\pi d^2} \cdot (n \cdot \omega_i) \cdot f_r(p,\omega_i,\omega_o)$$，这也是眼睛接收到的radiance。<br>几个需要注意的问题：<br>1.点光源不是“物理”光源，是一种理想模型。它无法定义出射radiance，对于某一方向，可以用intensity，值为 $I=\frac{\Phi}{4\pi}$。<br>2.BRDF的定义是出射的radiance除以入射的irradiance，为了得到后者我们需要将入射光乘以 $cos\theta$。<br>3.radiance是一根光线的特性，着色点出射的radiance与到达眼睛的radiance是相等的，没有平方衰减，距离增加的效果是在屏幕中对应的像素减少。
+考虑图1中的情况：对于点光源，我们无法定义它的出射radiance（因为没有面积），但是它的flux（记为 $\Phi$）均匀分布在半径为 $d$的球面上，球面面积为 $4\pi d^2$。因此，球面上单位面积的flux（理想情况的irradiance）为 $\frac{\Phi}{4\pi d^2}$。再引入入射角的影响，着色点 $\mathbf{p}$接收到的irradiance为 $\frac{\Phi}{4\pi d^2} \cdot (n \cdot \omega_i)$。表面的反射作用由BRDF（记为 $f_r(p,\omega_i,\omega_o)$）建模。最终出射radiance为 $$\frac{\Phi}{4\pi d^2} \cdot (n \cdot \omega_i) \cdot f_r(p,\omega_i,\omega_o)$$，这也是眼睛接收到的radiance。<br>几个需要注意的问题：<br>1.点光源不是“物理”光源，是一种理想模型。它无法定义出射radiance，对于某一方向，可以用intensity，值为 $I=\frac{\Phi}{4\pi}$。此外这里的结果不用于渲染，点光源渲染中用到的光源属性是另一个话题<br>2.BRDF的定义是出射的radiance除以入射的irradiance，为了得到后者我们需要将入射光乘以 $cos\theta$。<br>3.radiance是一根光线的特性，着色点出射的radiance与到达眼睛的radiance是相等的，没有平方衰减，距离增加的效果是在屏幕中对应的像素减少。
 ## 渲染方程
 场景是由一系列表面组成的，其中一些可以发光，成为radiance的来源。从表面上的点发出的光线的集合是以法线为中心的半球。这些光线携带的能量在传播过程中遵循的守恒定律就是渲染方程，这个方程不是推导出来的，也没有记忆压力，重要的是理解辐射度量和BRDF。根据不同的应用场景和计算需求，渲染方程可以表示为方向形式和表面形式。这两种形式在数学上是等价的，但它们在变量选择、积分域和物理含义上有所不同。
 ### 方向形式
@@ -37,7 +37,7 @@ $$\begin{cases} L_{\text{out}}(\mathbf{x}, \mathbf{v}_{\text{out}}) = L_e(\mathb
 
 ### 表面形式
 ![](media/3-points.png)
-<p align="center">图3 表面形式或者说三点形式的渲染方程（借用pbrt的图片^_^）。</p>
+<p align="center">图3 表面形式（也叫做三点形式）的渲染方程（借用pbrt的图片^_^）。</p>
 
 几何项： $$G(p \leftrightarrow p') = V(p \leftrightarrow p') \frac{|\cos \theta| |\cos \theta'|}{\|p - p'\|^2}.$$
 渲染方程： $$L(p' \rightarrow p) = L_e(p' \rightarrow p) + \int_A f(p'' \rightarrow p' \rightarrow p) \, L(p'' \rightarrow p') \, G(p'' \leftrightarrow p') \, dA(p'')$$
@@ -54,14 +54,13 @@ $$\begin{cases} L_{\text{out}}(\mathbf{x}, \mathbf{v}_{\text{out}}) = L_e(\mathb
 第二类积分方程 $$f(x) = g(x) + \int k(x, x') f(x') dx'$$
 显然渲染方程属于第二类积分方程。
 #### 线性算子
-线性算子作用于函数就像矩阵作用于向量 $$h(x) = (L \circ f)(x)$$线性性质 $$L \circ (a f + b g) = a(L \circ f) + b(L \circ g)$$ 线性算子的类型：<br>积分算子 $$(K \circ f)(x) \equiv \int k(x,x') f(x') dx'$$微分算子 $$(D \circ f)(x) \equiv \frac{\partial f}{\partial x}(x)$$
-<br>有了以上概念，渲染方程可以改写为 $$L_{\text{out}} = L_e + \mathcal{T}(L_{\text{out}})$$ $$\Rightarrow (1 - \mathcal{T})L_{\text{out}} = L_e$$下面简单介绍两种求解方法，以后单独开文章。
+线性算子作用于函数就像矩阵作用于向量 $$h(x) = (L \circ f)(x)$$线性性质 $$L \circ (a f + b g) = a(L \circ f) + b(L \circ g)$$ 线性算子的类型：<br>积分算子 $$(K \circ f)(x) \equiv \int k(x,x') f(x') dx'$$微分算子 $$(D \circ f)(x) \equiv \frac{\partial f}{\partial x}(x)$$有了以上概念，渲染方程可以改写为 $$L_{\text{out}} = L_e + \mathcal{T}(L_{\text{out}})$$ $$\Rightarrow (1 - \mathcal{T})L_{\text{out}} = L_e$$下面简单介绍两种求解方法，以后单独开文章。
 #### 辐射度方法
 - 渲染方程 $$(1 - \mathcal{T})L_{\text{out}} = L_e$$
 - 辐射度有限元
     - 离散化4D光线空间（surface $\times$ hemisphere）到N个元素。
     - $L_e$， $L_{out}$都表示为N维向量。
-    - $(1 - \mathcal{T})$成为矩阵
+    - $(1 - \mathcal{T})$变成矩阵
     - 求解线性系统
 
 #### 光线追踪
