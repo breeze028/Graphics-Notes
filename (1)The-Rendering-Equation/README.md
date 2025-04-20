@@ -22,7 +22,7 @@
 ## 渲染方程
 场景是由一系列表面组成的，其中一些可以发光，成为radiance的来源。从表面上的点发出的光线的集合是以法线为中心的半球。这些光线携带的能量在传播过程中遵循的守恒定律就是渲染方程，这个方程不是推导出来的，也没有记忆压力，重要的是理解辐射度量和BRDF。根据不同的应用场景和计算需求，渲染方程可以表示为方向形式和表面形式。这两种形式在数学上是等价的，但它们在变量选择、积分域和物理含义上有所不同。
 ### 方向形式
-$$ \begin{cases} L_{\text{out}}(\mathbf{x}, \mathbf{v}_{\text{out}}) = L_e(\mathbf{x}, \mathbf{v}_{\text{out}}) + \iint_{H_\mathbf{x}} f(\mathbf{x}, \mathbf{v}_{\text{out}}, \mathbf{v}_{\text{in}}) L_{\text{in}}(\mathbf{x}, \mathbf{v}_{\text{in}}) \, d\sigma^\perp_{\mathbf{v}_{\text{in}}} \\ L_{\text{in}}(\mathbf{x}, \mathbf{v}_{\text{in}}) = L_{\text{out}}(\text{Cast}(\mathbf{x}, \mathbf{v}_{\text{in}})) \end{cases} $$
+$$\begin{cases} L_{\text{out}}(\mathbf{x}, \mathbf{v}_{\text{out}}) = L_e(\mathbf{x}, \mathbf{v}_{\text{out}}) + \iint_{H_\mathbf{x}} f(\mathbf{x}, \mathbf{v}_{\text{out}}, \mathbf{v}_{\text{in}}) L_{\text{in}}(\mathbf{x}, \mathbf{v}_{\text{in}}) \, d\sigma^\perp_{\mathbf{v}_{\text{in}}} \\ L_{\text{in}}(\mathbf{x}, \mathbf{v}_{\text{in}}) = L_{\text{out}}(\text{Cast}(\mathbf{x}, \mathbf{v}_{\text{in}})) \end{cases}$$
 - $L_{out}$:从点 $\mathbf{x}$向 $\mathbf{v}_{out}$发出的光。
 - $L_e$：点 $\mathbf{x}$在该方向上的自发光。
 - 第二项是对所有入射方向 $\mathbf{v}_{in}$的积分，考虑了：
@@ -31,7 +31,7 @@ $$ \begin{cases} L_{\text{out}}(\mathbf{x}, \mathbf{v}_{\text{out}}) = L_e(\math
     - $d\sigma^\perp$：半球投影面积微元。
 - 第二行表示：入射光来自另一个点向该点射出的出射光。
 
-更常见的写法可能是这样的： $$L_o(p, \omega_o) = L_e(p, \omega_o) + \int_{\Omega^+} L_i(p, \omega_i) f_r(p, \omega_i, \omega_o)(n \cdot \omega_i) \, d\omega_i$$ <br>区别有以下两点：<br>1. $(n \cdot \omega_i) \, d\omega_i$和$d\sigma^\perp$是一样的，只是不同资料记法上的区别。<br>2.第一种写法强调了入射radiance的来源，我觉得这点还是比较重要的。这个radiance可能来自面光源,IBL,或者其它表面反射的光。Cast函数返回自变量发射的光线打到的第一个点， $Cast(\mathbf{p}, \mathbf{d}) = (\mathbf{p}+t\mathbf{d}, -\mathbf{d})$，图2展示了这一点。
+更常见的写法可能是这样的： $$L_o(p, \omega_o) = L_e(p, \omega_o) + \int_{\Omega^+} L_i(p, \omega_i) f_r(p, \omega_i, \omega_o)(n \cdot \omega_i) \, d\omega_i$$ <br>区别有以下两点：<br>1. $(n \cdot \omega_i) \, d\omega_i$和 $d\sigma^\perp$是一样的，只是不同资料记法上的区别。<br>2.第一种写法强调了入射radiance的来源，我觉得这点还是比较重要的。这个radiance可能来自面光源,IBL,或者其它表面反射的光。Cast函数返回自变量发射的光线打到的第一个点， $Cast(\mathbf{p}, \mathbf{d}) = (\mathbf{p}+t\mathbf{d}, -\mathbf{d})$，图2展示了这一点。
 ![](media/cast-ray.png)
 <p align="center">图2 Cast函数的作用，可以看到两个箭头方向相反（方向的习惯记法是着色点作为起点）。</p>
 
@@ -41,18 +41,12 @@ $$ \begin{cases} L_{\text{out}}(\mathbf{x}, \mathbf{v}_{\text{out}}) = L_e(\math
 
 几何项： $$G(p \leftrightarrow p') = V(p \leftrightarrow p') \frac{|\cos \theta| |\cos \theta'|}{\|p - p'\|^2}.$$
 渲染方程： $$L(p' \rightarrow p) = L_e(p' \rightarrow p) + \int_A f(p'' \rightarrow p' \rightarrow p) \, L(p'' \rightarrow p') \, G(p'' \leftrightarrow p') \, dA(p'')$$
-几何项的来源：将立体角积分转为面积积分，$d\omega = \frac{\cos\theta'}{\|p - p'\|^2} dA$（如果你不熟悉这个等式请参考其它资料）。再考虑可见性和渲染方程中本来存在的入射光线与着色点表面法线的夹角余弦。
+几何项的来源：将立体角积分转为面积积分， $d\omega = \frac{\cos\theta'}{\|p - p'\|^2} dA$（如果你不熟悉这个等式请参考其它资料）。再考虑可见性和渲染方程中本来存在的入射光线与着色点表面法线的夹角余弦。
 ### 方向形式和表面形式的区别
 方向形式像用“手电筒”直接测量某个方向的亮度（radiance），不考虑radiance的来源，例如光源距离和遮挡，如果遮挡radiance就是零。在对BSDF，IBL采样，计算AO时通常会采用方向形式。面积形式像计算“整个房间的灯光照射到某点”的总能量（irradiance），依赖于两点之间的几何关系，必须考虑距离和角度衰减。路径积分，计算面光源的直接光照时会采用面积形式。
 ## 求解渲染方程
 ### 有解析解吗？
-渲染方程的维度会随光路顶点数增加而增加（之后的路径追踪的笔记会展示这一点），通常只能用数值积分求解。只有在一些极端简单的光照条件下才有解析解，例如均匀光照、只算直接光照、特殊的光源和BRDF等等。我们不妨回顾一下例1，着色点$\mathbf{p}$的法线半球上只有 $\omega_l$（这里的$\omega_l$是例1中的$\omega_i$）方向radiance不为零，可以写为 $$
-L_i(x, \omega_i) = \frac{I(\omega_l)}{d^2} \cdot \delta(\omega_i - \omega_l)
-$$，渲染方程 $$
-L_o(x, \omega_o) = \int_\Omega f_r(x, \omega_i, \omega_o) \cdot L_i(x, \omega_i) \cdot (\omega_i \cdot n) \, d\omega_i
-$$将上式中的 $L_i$ 换为点光源形式后： $$
-L_o(x, \omega_o) = f_r(x, \omega_l, \omega_o) \cdot \frac{I(\omega_l)}{d^2} \cdot (\omega_l \cdot n)
-$$这个结果与例1相同。
+渲染方程的维度会随光路顶点数增加而增加（之后的路径追踪的笔记会展示这一点），通常只能用数值积分求解。只有在一些极端简单的光照条件下才有解析解，例如均匀光照、只算直接光照、特殊的光源和BRDF等等。我们不妨回顾一下例1，着色点 $\mathbf{p}$的法线半球上只有 $\omega_l$（这里的 $\omega_l$是例1中的 $\omega_i$）方向radiance不为零，可以写为 $$L_i(x, \omega_i) = \frac{I(\omega_l)}{d^2} \cdot \delta(\omega_i - \omega_l)$$，渲染方程 $$L_o(x, \omega_o) = \int_\Omega f_r(x, \omega_i, \omega_o) \cdot L_i(x, \omega_i) \cdot (\omega_i \cdot n) \, d\omega_i$$将上式中的 $L_i$ 换为点光源形式后： $$L_o(x, \omega_o) = f_r(x, \omega_l, \omega_o) \cdot \frac{I(\omega_l)}{d^2} \cdot (\omega_l \cdot n)$$这个结果与例1相同。
 ### 通用解法
 先介绍一些概念：
 #### 积分方程：
@@ -66,7 +60,7 @@ $$这个结果与例1相同。
 - 渲染方程 $$(1 - \mathcal{T})L_{\text{out}} = L_e$$
 - 辐射度有限元
     - 离散化4D光线空间（surface $\times$ hemisphere）到N个元素。
-    - $L_e$，$L_{out}$都表示为N维向量。
+    - $L_e$， $L_{out}$都表示为N维向量。
     - $(1 - \mathcal{T})$成为矩阵
     - 求解线性系统
 
