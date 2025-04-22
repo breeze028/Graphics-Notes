@@ -71,7 +71,7 @@ $$\begin{cases} L_{\text{out}}(\mathbf{x}, \mathbf{v}_{\text{out}}) = L_e(\mathb
 
 #### 光线追踪
 - 渲染方程 $$(1 - \mathcal{T})L_{\text{out}} = L_e$$
-- 光线追踪 $$L_{\text{out}} = (1 - T)^{-1} L_e$$ $$L_{\text{out}} = (1 + T + T^2 + T^3 + \cdots) L_e$$
+- 光线追踪 $$L_{\text{out}} = (1 - \mathcal{T})^{-1} L_e$$ $$L_{\text{out}} = (1 + \mathcal{T} + \mathcal{T}^2 + \mathcal{T}^3 + \cdots) L_e$$
 
 用Neumann级数展开渲染方程，物理意义是渲染结果是直接光照、一次间接光照、二次间接光照和更高次弹射的和。路径追踪使用蒙特卡洛积分数值计算，配合俄罗斯轮盘赌对这个无穷项和进行无偏估计。
 
