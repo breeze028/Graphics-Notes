@@ -13,7 +13,7 @@
 | Radiance        | \( L \)      | W/(m²·sr)     | 单位面积单位立体角的flux，衡量单条光线亮度       |
 <p align="center">表1 常见的辐射度量和单位</p>
 
-渲染中常用的辐射度量有energy、flux/power、intensity、irradiance和radiance（这几个物理量保留英文，不做翻译），具体定义请见其它材料。理解这几个物理量的含义是学习渲染方程的关键，下面我用一个例子展示它们的作用和区别。
+渲染中常用的辐射度量有energy、flux/power、intensity、irradiance和radiance（这几个物理量保留英文，不做翻译）。理解这几个物理量的含义是学习渲染方程的关键，下面我用一个例子展示它们的作用和区别。
 ### 例1
 ![](media/the-life-of-light.png)
 <p align="center">图1 一条由点光源、着色点、眼睛构成的简单光路</p>
@@ -31,17 +31,23 @@ $$\begin{cases} L_{\text{out}}(\mathbf{x}, \mathbf{v}_{\text{out}}) = L_e(\mathb
     - $d\sigma^\perp$：半球投影面积微元。
 - 第二行表示：入射光来自另一个点向该点射出的出射光。
 
+![](media/direction-form.png)
+<p align="center">图2 方向形式的渲染方程，统计半球上各个方向的入射radiance</p>
+
 更常见的写法可能是这样的： $$L_o(p, \omega_o) = L_e(p, \omega_o) + \int_{\Omega^+} L_i(p, \omega_i) f_r(p, \omega_i, \omega_o)(n \cdot \omega_i) \, d\omega_i$$ <br>区别有以下两点：<br>1. $(n \cdot \omega_i) \, d\omega_i$和 $d\sigma^\perp$是一样的，只是不同资料记法上的区别。<br>2.第一种写法强调了入射radiance的来源，我觉得这点还是比较重要的。这个radiance可能来自面光源,IBL,或者其它表面反射的光。Cast函数返回自变量发射的光线打到的第一个点， $Cast(\mathbf{p}, \mathbf{d}) = (\mathbf{p}+t\mathbf{d}, -\mathbf{d})$，图2展示了这一点。
 ![](media/cast-ray.png)
-<p align="center">图2 Cast函数的作用，可以看到两个箭头方向相反（方向的习惯记法是着色点作为起点）。</p>
+<p align="center">图3 Cast函数的作用，可以看到两个箭头方向相反（方向的习惯记法是着色点作为起点）</p>
 
 ### 表面形式
 ![](media/3-points.png)
-<p align="center">图3 表面形式（也叫做三点形式）的渲染方程（借用pbrt的图片^_^）。</p>
+<p align="center">图4 表面形式（也叫做三点形式）的渲染方程</p>
 
 几何项： $$G(p \leftrightarrow p') = V(p \leftrightarrow p') \frac{|\cos \theta| |\cos \theta'|}{\|p - p'\|^2}.$$
 渲染方程： $$L(p' \rightarrow p) = L_e(p' \rightarrow p) + \int_A f(p'' \rightarrow p' \rightarrow p) \, L(p'' \rightarrow p') \, G(p'' \leftrightarrow p') \, dA(p'')$$
-几何项的来源：将立体角积分转为面积积分， $d\omega = \frac{\cos\theta'}{\|p - p'\|^2} dA$（如果你不熟悉这个等式请参考其它资料）。再考虑可见性和渲染方程中本来存在的入射光线与着色点表面法线的夹角余弦。
+几何项的来源：将立体角积分转为面积积分， $d\omega = \frac{\cos\theta'}{\|p - p'\|^2} dA$。再考虑可见性和渲染方程中本来存在的入射光线与着色点表面法线的夹角余弦。
+![](media/Sampling-the-Light.png)
+<p align="center">图5 立体角微元与面积微元的雅可比</p>
+
 ### 方向形式和表面形式的区别
 方向形式像用“手电筒”直接测量某个方向的亮度（radiance），不考虑radiance的来源，例如光源距离和遮挡，如果遮挡radiance就是零。在对BSDF，IBL采样，计算AO时通常会采用方向形式。面积形式像计算“整个房间的灯光照射到某点”的总能量（irradiance），依赖于两点之间的几何关系，必须考虑距离和角度衰减。路径积分，计算面光源的直接光照时会采用面积形式。
 ## 求解渲染方程
@@ -68,5 +74,21 @@ $$\begin{cases} L_{\text{out}}(\mathbf{x}, \mathbf{v}_{\text{out}}) = L_e(\mathb
 - 光线追踪 $$L_{\text{out}} = (1 - T)^{-1} L_e$$ $$L_{\text{out}} = (1 + T + T^2 + T^3 + \cdots) L_e$$
 
 用Neumann级数展开渲染方程，物理意义是渲染结果是直接光照、一次间接光照、二次间接光照和更高次弹射的和。路径追踪使用蒙特卡洛积分数值计算，配合俄罗斯轮盘赌对这个无穷项和进行无偏估计。
+
+## 核心假设与适用条件
+1. **几何光学近似**  
+   - 假设光以直线传播（波动效应如衍射、干涉忽略不计）。  
+   - 适用于宏观场景（尺度远大于光波长）。  
+
+2. **无透射的经典形式**  
+   - 默认仅考虑表面反射与发射，**不包含透射**（需扩展为BSDF或BSSRDF模型）。  
+   - 透射需引入额外项（如折射光线的贡献）。  
+
+3. **无参与介质**  
+   - 假设光在真空中传播，**忽略散射/吸收介质**（如雾、云、水）。  
+   - 参与介质需引入体积渲染方程（含散射、吸收、发射项）。  
+
+4. **稳态光场**  
+   - 假设光场处于平衡状态（动态效应如荧光、时变介质需额外建模）。  
 ## 总结
 渲染方程作为基于物理的渲染中光照模型的核心，不仅统一了直接光照与间接光照的表达方式，也为多种全局光照算法提供了理论框架。通过理解辐射度量学、BRDF 以及渲染方程的多种形式，我们能够更清晰地把握光照在场景中的传播机制。尽管渲染方程本身难以求解，其形式化表达却为近似计算提供了明确的方向。在后续的学习中，将深入路径积分与蒙特卡洛方法等数值求解技术，以进一步理解光照传输的复杂性与计算机图形学在“模拟真实”中的策略。
